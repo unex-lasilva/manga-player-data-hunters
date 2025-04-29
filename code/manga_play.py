@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 def recommend_by_history(user_id):
     # Essa função vai usar o histórico do usuário
     # Vai chamar o algoritmo Apriori
@@ -24,6 +27,18 @@ def display_menu():
 
     return user_id, option
 
+def import_datas():
+    df_movie = pd.read_csv("../data/movies_metadata.csv", low_memory=False)
+    df_movie = df_movie[pd.to_numeric(df_movie['id'], errors='coerce').notna()]
+    df_movie['id'] = df_movie['id'].astype(int)
+    #
+    df_ratings = pd.read_csv("../data/ratings_small.csv", low_memory=False)
+    df_ratings['movieId'] = df_ratings['movieId'].astype(int)
+
+    df = pd.merge(df_movie, df_ratings, left_on='id', right_on='movieId')
+    pd.set_option('display.max_columns', None)
+    print(df)
+
 def main():
     user_id, recommendation_type = display_menu()
     
@@ -35,4 +50,6 @@ def main():
         recommend_by_last_movie(user_id)
 
 if __name__ == "__main__":
+    import_datas()
     main()
+    
