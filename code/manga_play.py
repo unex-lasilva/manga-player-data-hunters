@@ -35,9 +35,7 @@ def import_datas():
     df_ratings = pd.read_csv("../data/ratings_small.csv", low_memory=False)
     df_ratings['movieId'] = df_ratings['movieId'].astype(int)
 
-    df = pd.merge(df_movie, df_ratings, left_on='id', right_on='movieId')
-    pd.set_option('display.max_columns', None)
-    print(df)
+    return pd.merge(df_movie, df_ratings, left_on='id', right_on='movieId')
 
 def main():
     user_id, recommendation_type = display_menu()
