@@ -3,6 +3,7 @@ O Manga Play será a plataforma de streaming da Manga Rosa. Nela, vocês deverã
 
 Link para o dataset: https://drive.google.com/drive/folders/1oVq3bZhEznLWbcabT3cDOc2unzMswP0y?usp=sharing
 
-# Equipe: <nome-da-equipe>
-1. <Nome de fulano>
-2. <Nome de fulana>
+# Equipe: Data Hunters
+1. Gabriel Arlisson de Souza Santos Torres
+2. Leandro Vitor Santos Rocha
+3. Vinicius Cerqueira Oliveira
