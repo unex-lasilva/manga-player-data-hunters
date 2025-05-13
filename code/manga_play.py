@@ -1,10 +1,12 @@
 import pandas as pd
 
+
 def calcular_suporte(df, itemset):
     subset = df[list(itemset)]
     is_present = subset.all(axis=1)
     suporte = is_present.sum() / len(df)
     return suporte
+
 
 def gerar_candidatos(frequentes_prev, k):
     candidatos = []
@@ -20,7 +22,7 @@ def gerar_candidatos(frequentes_prev, k):
             if len(union) == k and union not in candidatos:
                 subconjuntos_validos = True
                 for idx in range(len(union)):
-                    subset = union[:idx] + union[idx+1:]
+                    subset = union[:idx] + union[idx + 1:]
                     if subset not in frequentes_prev:
                         subconjuntos_validos = False
                         break
@@ -28,6 +30,7 @@ def gerar_candidatos(frequentes_prev, k):
                     candidatos.append(union)
 
     return candidatos
+
 
 def gerar_regras(itemset, suporte_itemset, suporte_dict, min_confidence):
     regras = []
@@ -64,6 +67,7 @@ def gerar_regras(itemset, suporte_itemset, suporte_dict, min_confidence):
 
     return regras
 
+
 def apriori(df, min_support, min_confidence):
     itens = df.columns.tolist()
     resultados = []
@@ -97,17 +101,76 @@ def apriori(df, min_support, min_confidence):
     return pd.DataFrame(resultados), pd.DataFrame(regras)
 
 
-def recommend_by_history(user_id):
-    # Essa função vai usar o histórico do usuário
-    # Vai chamar o algoritmo Apriori
-    # Vai trazer recomendações de filmes
-    pass
+def recommend_by_history(user_id, df):
+    min_support = 0.10
+    min_confidence = 0.15
 
-def recommend_by_last_movie(user_id):
-    # Essa função vai usar o último filme que o usuário gostou
-    # Vai chamar o algoritmo Apriori
-    # Vai trazer recomendações de filmes
-    pass
+    df_filter = df[df.rating > 3]
+
+    df_pivot = df_filter.assign(value=1).pivot_table(index='userId', columns='title', values='value', fill_value=0)
+    df_pivot = df_pivot.astype(int)
+    transacoes_linha = df_pivot.loc[int(user_id)]
+    transacoes_linha = set(transacoes_linha[transacoes_linha == 1].index.tolist())
+
+    result = pd.DataFrame(df_pivot.values, columns=df_pivot.columns)
+
+    frequentes, regras = apriori(result, min_support, min_confidence)
+
+    regras_boas = regras[regras.lift > 1]
+    recomendacoes = set()
+
+    for _, row in regras_boas.iterrows():
+        antecedente = set(row['antecedente'])
+        consequente = set(row['consequente'])
+
+        if transacoes_linha & antecedente:
+            recomendacoes.update(consequente)
+
+    recomendacoes = recomendacoes - transacoes_linha
+
+    print("\nRecomendações: ")
+    if len(recomendacoes) == 0:
+        print("Não tem recomendações")
+
+    for filme in recomendacoes:
+        print(filme, end='\n')
+
+
+def recommend_by_last_movie(user_id, df):
+    min_support = 0.10
+    min_confidence = 0.10
+
+    df_filter = df[df.rating > 3]
+
+    df_pivot = df_filter.assign(value=1).pivot_table(index='userId', columns='title', values='value', fill_value=0)
+    df_pivot = df_pivot.astype(int)
+
+    transacoes_linha = df[df.userId == int(user_id)]
+    transacoes_linha = set(transacoes_linha.sort_values(by='timestamp').iloc[0][['title']])
+
+    result = pd.DataFrame(df_pivot.values, columns=df_pivot.columns)
+
+    frequentes, regras = apriori(result, min_support, min_confidence)
+
+    regras_boas = regras[regras.lift > 1]
+    recomendacoes = set()
+
+    for _, row in regras_boas.iterrows():
+        antecedente = set(row['antecedente'])
+        consequente = set(row['consequente'])
+
+        if transacoes_linha & antecedente:
+            recomendacoes.update(consequente)
+
+    recomendacoes = recomendacoes - transacoes_linha
+
+    print("\nRecomendações: ")
+    if len(recomendacoes) == 0:
+        print("Não tem recomendações")
+
+    for filme in recomendacoes:
+        print(filme, end='\n')
+
 
 def display_menu():
     print("=== Manga Play - Sistema de Recomendação ===")
@@ -123,6 +186,7 @@ def display_menu():
 
     return user_id, option
 
+
 def import_datas():
     df_movie = pd.read_csv("../data/movies_metadata.csv", low_memory=False)
     df_movie = df_movie[pd.to_numeric(df_movie['id'], errors='coerce').notna()]
@@ -134,19 +198,17 @@ def import_datas():
     return pd.merge(df_movie, df_ratings, left_on='id', right_on='movieId')
 
 
-def main():
+def main(df):
     user_id, recommendation_type = display_menu()
-    
+
     if recommendation_type == '1':
         print(f"\nVocê escolheu: Recomendação baseada no histórico de gostos do usuário {user_id}.")
-        recommend_by_history(user_id)
+        recommend_by_history(user_id, df)
     elif recommendation_type == '2':
         print(f"\nVocê escolheu: Recomendação baseada no último filme que o usuário {user_id} gostou.")
-        recommend_by_last_movie(user_id)
-
+        recommend_by_last_movie(user_id, df)
 
 
 if __name__ == "__main__":
     df = import_datas()
-    main()
-    
+    main(df)
